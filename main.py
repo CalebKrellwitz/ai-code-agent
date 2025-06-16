@@ -3,11 +3,18 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 
+from functions.get_files_info import get_files_info
+from functions.get_file_content import get_file_content
+from functions.write_file import write_file
+from functions.run_python_file import run_python_file
+
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 client_name = "gemini-2.0-flash-001"
+working_directory = "./calculator"
+verbose = "--verbose" in sys.argv
 user_prompt = sys.argv[1]
 
 system_prompt = """
@@ -92,6 +99,46 @@ available_functions = genai.types.Tool(
     ]
 )
 
+def call_function(function_call_part, verbose=False):
+    if verbose:
+        print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+    else:
+        print(f" - Calling function: {function_call_part.name}")
+
+    args = function_call_part.args.copy()
+    args["working_directory"] = working_directory
+
+    function_result = None
+
+    if function_call_part.name == "get_files_info":
+        function_result = get_files_info(**args)
+    elif function_call_part.name == "get_file_content":
+        function_result = get_file_content(**args)
+    elif function_call_part.name == "write_file":
+        function_result = write_file(**args)
+    elif function_call_part.name == "run_python_file":
+        function_result = run_python_file(**args)
+    else:
+        return genai.types.Content(
+            role="tool",
+            parts=[
+                genai.types.Part.from_function_response(
+                    name=function_call_part.name,
+                    response={"error": f"Unknown function: {function_call_part.name}"},
+                )
+            ],
+        )
+
+    return genai.types.Content(
+        role="tool",
+        parts=[
+            genai.types.Part.from_function_response(
+                name=function_call_part.name,
+                response={"result": function_result},
+            )
+        ],
+    )
+
 messages = [
     genai.types.Content(role="user", parts=[genai.types.Part(text=user_prompt)]),
 ]
@@ -105,11 +152,16 @@ response = client.models.generate_content(
     ),
 )
 
-for func_call in response.function_calls:
-    print(f"Calling function: {func_call.name}({func_call.args})")
-print(response.text)
+for function_call_part in response.function_calls:
+    function_call_result = call_function(function_call_part, verbose)
+    if function_call_result.parts[0].function_response.response == None:
+        raise Exception("Error: function called gave no response")
+    if verbose:
+        print(f"-> {function_call_result.parts[0].function_response.response}")
 
-if "--verbose" in sys.argv:
+#print(response.text)
+
+if verbose:
     print(f"User prompt: {user_prompt}")
     print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
     print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
