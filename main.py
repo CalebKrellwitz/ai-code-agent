@@ -28,7 +28,12 @@ def main():
         genai.types.Content(role="user", parts=[genai.types.Part(text=user_prompt)]),
     ]
 
-    generate_content(client, messages, verbose)
+    for _ in range(20):
+        response_text = generate_content(client, messages, verbose)
+        if isinstance(response_text, str):
+            break
+
+    print(response_text)
 
 def generate_content(client, messages, verbose):
     response = client.models.generate_content(
@@ -39,13 +44,15 @@ def generate_content(client, messages, verbose):
             system_instruction=system_prompt,
         ),
     )
+
+    for candidate in response.candidates:
+        messages.append(candidate.content)
     
     if verbose:
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
     if not response.function_calls:
-        print(response.text)
         return response.text
 
     function_responses = []
@@ -57,6 +64,8 @@ def generate_content(client, messages, verbose):
             or not function_call_result.parts[0].function_response
         ):
             raise Exception("Error: function called gave no response")
+
+        messages.append(function_call_result)
 
         if verbose:
             print(f"-> {function_call_result.parts[0].function_response.response}")
