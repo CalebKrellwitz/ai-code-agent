@@ -1,6 +1,8 @@
 import os
 from google import genai
 
+from config import MAX_CHARS
+
 def get_file_content(working_directory, file_path):
     abs_working_directory = os.path.abspath(working_directory)
     abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
@@ -15,10 +17,10 @@ def get_file_content(working_directory, file_path):
     file_content_string = ""
 
     with open(abs_file_path, "r") as f:
-        file_content_string = f.read(10000)
+        file_content_string = f.read(MAX_CHARS)
 
-    if len(file_content_string) == 10000:
-        file_content_string += f'[...File "{file_path}" truncated at 10000 characters]'
+    if len(file_content_string) == MAX_CHARS:
+        file_content_string += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
 
     return file_content_string
   
