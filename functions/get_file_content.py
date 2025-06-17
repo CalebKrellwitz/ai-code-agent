@@ -1,4 +1,5 @@
 import os
+from google import genai
 
 def get_file_content(working_directory, file_path):
     abs_working_directory = os.path.abspath(working_directory)
@@ -20,3 +21,17 @@ def get_file_content(working_directory, file_path):
         file_content_string += f'[...File "{file_path}" truncated at 10000 characters]'
 
     return file_content_string
+  
+schema_get_file_content = genai.types.FunctionDeclaration(
+    name="get_file_content",
+    description="Reads the content of the file at the specified file path, constrained to the working directory.",
+    parameters=genai.types.Schema(
+        type=genai.types.Type.OBJECT,
+        properties={
+            "file_path": genai.types.Schema(
+                type=genai.types.Type.STRING,
+                description="The path to the file to read content from, relative to the working directory.",
+            ),
+        },
+    ),
+)
