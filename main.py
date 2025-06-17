@@ -3,10 +3,10 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 
-from functions.get_files_info import get_files_info
-from functions.get_file_content import get_file_content
-from functions.write_file import write_file
-from functions.run_python_file import run_python_file
+from functions.get_files_info import get_files_info, schema_get_files_info
+from functions.get_file_content import get_file_content, schema_get_file_content
+from functions.write_file import write_file, schema_write_file
+from functions.run_python_file import run_python_file, schema_run_python_file
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -29,66 +29,6 @@ When a user asks a question or makes a request, make a function call plan. You c
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
-
-schema_get_files_info = genai.types.FunctionDeclaration(
-    name="get_files_info",
-    description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
-    parameters=genai.types.Schema(
-        type=genai.types.Type.OBJECT,
-        properties={
-            "directory": genai.types.Schema(
-                type=genai.types.Type.STRING,
-                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
-            ),
-        },
-    ),
-)
-
-schema_get_file_content = genai.types.FunctionDeclaration(
-    name="get_file_content",
-    description="Reads the content of the file at the specified file path, constrained to the working directory.",
-    parameters=genai.types.Schema(
-        type=genai.types.Type.OBJECT,
-        properties={
-            "file_path": genai.types.Schema(
-                type=genai.types.Type.STRING,
-                description="The path to the file to read content from, relative to the working directory.",
-            ),
-        },
-    ),
-)
-
-schema_write_file = genai.types.FunctionDeclaration(
-    name="write_file",
-    description="Writes or overwrites the content of the file at the specified file path, constrained to the working directory. If the file does not exist, it will be created.",
-    parameters=genai.types.Schema(
-        type=genai.types.Type.OBJECT,
-        properties={
-            "file_path": genai.types.Schema(
-                type=genai.types.Type.STRING,
-                description="The path to the file to be written or overwritten, relative to the working directory.",
-            ),
-            "content": genai.types.Schema(
-                type=genai.types.Type.STRING,
-                description="The content with which to write or overwrite the specified file.",
-            ),
-        },
-    ),
-)
-
-schema_run_python_file = genai.types.FunctionDeclaration(
-    name="run_python_file",
-    description="Executes a Python script located at the specified file path, constrained to the working directory. Files ending in '.py' are Python scripts.",
-    parameters=genai.types.Schema(
-        type=genai.types.Type.OBJECT,
-        properties={
-            "file_path": genai.types.Schema(
-                type=genai.types.Type.STRING,
-                description="The path to the Python file to execute, relative to the working directory.",
-            ),
-        },
-    ),
-)
 
 available_functions = genai.types.Tool(
     function_declarations=[
