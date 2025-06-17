@@ -3,88 +3,22 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 
-from functions.get_files_info import get_files_info, schema_get_files_info
-from functions.get_file_content import get_file_content, schema_get_file_content
-from functions.write_file import write_file, schema_write_file
-from functions.run_python_file import run_python_file, schema_run_python_file
+from system_prompt import system_prompt
+from call_function import call_function, available_functions
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
-client_name = "gemini-2.0-flash-001"
-working_directory = "./calculator"
 verbose = "--verbose" in sys.argv
 user_prompt = sys.argv[1]
-
-system_prompt = """
-You are a helpful AI coding agent.
-
-When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
-
-- List files and directories
-- Read file contents
-- Write or overwrite files
-- Execute Python files with optional arguments
-
-All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
-"""
-
-available_functions = genai.types.Tool(
-    function_declarations=[
-        schema_get_files_info,
-        schema_get_file_content,
-        schema_write_file,
-        schema_run_python_file,
-    ]
-)
-
-def call_function(function_call_part, verbose=False):
-    if verbose:
-        print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    else:
-        print(f" - Calling function: {function_call_part.name}")
-
-    args = function_call_part.args.copy()
-    args["working_directory"] = working_directory
-
-    function_result = None
-
-    if function_call_part.name == "get_files_info":
-        function_result = get_files_info(**args)
-    elif function_call_part.name == "get_file_content":
-        function_result = get_file_content(**args)
-    elif function_call_part.name == "write_file":
-        function_result = write_file(**args)
-    elif function_call_part.name == "run_python_file":
-        function_result = run_python_file(**args)
-    else:
-        return genai.types.Content(
-            role="tool",
-            parts=[
-                genai.types.Part.from_function_response(
-                    name=function_call_part.name,
-                    response={"error": f"Unknown function: {function_call_part.name}"},
-                )
-            ],
-        )
-
-    return genai.types.Content(
-        role="tool",
-        parts=[
-            genai.types.Part.from_function_response(
-                name=function_call_part.name,
-                response={"result": function_result},
-            )
-        ],
-    )
 
 messages = [
     genai.types.Content(role="user", parts=[genai.types.Part(text=user_prompt)]),
 ]
 
 response = client.models.generate_content(
-    model=client_name, 
+    model="gemini-2.0-flash-001", 
     contents=messages,
     config=genai.types.GenerateContentConfig(
         tools=[available_functions],
