@@ -13,9 +13,7 @@ def main():
     args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
 
     if not args:
-        print("AI Code Assistant")
-        print('\nUsage: python main.py "your prompt here" [--verbose]')
-        print('Example: python main.py "How do I fix the calculator?"')
+        print('''AI Code Agent\n\nUsage: python3 main.py "your prompt here" [--verbose]\nExample: python3 main.py "How do I fix the calculator?"''')
         sys.exit(1)
         
     api_key = os.environ.get("GEMINI_API_KEY")

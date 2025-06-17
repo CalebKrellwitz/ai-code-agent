@@ -22,20 +22,14 @@ def call_function(function_call_part, verbose=False):
     else:
         print(f" - Calling function: {function_call_part.name}")
 
-    args = function_call_part.args.copy()
-    args["working_directory"] = WORKING_DIRECTORY
+    function_map = {
+        "get_files_info": get_files_info,
+        "get_file_content": get_file_content,
+        "write_file": write_file,
+        "run_python_file": run_python_file,
+    }
 
-    function_result = None
-
-    if function_call_part.name == "get_files_info":
-        function_result = get_files_info(**args)
-    elif function_call_part.name == "get_file_content":
-        function_result = get_file_content(**args)
-    elif function_call_part.name == "write_file":
-        function_result = write_file(**args)
-    elif function_call_part.name == "run_python_file":
-        function_result = run_python_file(**args)
-    else:
+    if function_call_part.name not in function_map:
         return genai.types.Content(
             role="tool",
             parts=[
@@ -45,6 +39,11 @@ def call_function(function_call_part, verbose=False):
                 )
             ],
         )
+
+    args = dict(function_call_part.args)
+    args["working_directory"] = WORKING_DIRECTORY
+
+    function_result = function_map[function_call_part.name](**args)
 
     return genai.types.Content(
         role="tool",
