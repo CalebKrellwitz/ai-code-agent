@@ -3,6 +3,7 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 
+from config import GEMINI_MODEL, MAX_ITERATIONS
 from system_prompt import system_prompt
 from call_function import call_function, available_functions
 
@@ -28,7 +29,7 @@ def main():
         genai.types.Content(role="user", parts=[genai.types.Part(text=user_prompt)]),
     ]
 
-    for _ in range(20):
+    for _ in range(MAX_ITERATIONS):
         response_text = generate_content(client, messages, verbose)
         if isinstance(response_text, str):
             break
@@ -37,7 +38,7 @@ def main():
 
 def generate_content(client, messages, verbose):
     response = client.models.generate_content(
-        model="gemini-2.0-flash-001", 
+        model=GEMINI_MODEL, 
         contents=messages,
         config=genai.types.GenerateContentConfig(
             tools=[available_functions],
